@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>What changes when an AI can use tools? - Interactive Newsletter Lab</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>:root{--ink:#14141a;--mute:#5d5f6a;--line:#e6e6ea;--acc:#e4572e;--clay:#f4f4f6}
+<style>input[type=checkbox]{accent-color:#e4572e}:root{--ink:#14141a;--mute:#5d5f6a;--line:#e6e6ea;--acc:#e4572e;--clay:#f4f4f6}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
 body{margin:0;background:#fff;color:var(--ink);font:17px/1.55 Figtree,-apple-system,Helvetica,Arial,sans-serif}
 main{max-width:680px;margin:0 auto;padding:22px 18px 70px}
@@ -104,7 +104,7 @@ async function model(messages,tools,label){
   var j;try{j=await r.json()}catch(e){throw {msg:"Unexpected reply from the model service."}}
   var m=j.choices&&j.choices[0]&&j.choices[0].message;if(!m)throw {msg:"The model service returned no answer."};return m}
 async function run(useTools){
-  var p=$("q").value.slice(0,500);if(!p.replace(/\s/g,"")||busy)return;
+  var p=$("q").value.slice(0,500);if(!p.replace(/\s/g,"")||busy)return;if(useTools)await rebuild();
   if(useTools&&!mcp){return}
   setBusy(true);
   var names=mcpTools.map(function(t){return t.name});
