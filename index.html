@@ -41,7 +41,7 @@ code{font:14px Menlo,monospace;background:#f1ede4;padding:1px 4px;border-radius:
 <p class="note">The server speaks standard MCP over HTTP. Add this URL to any MCP client that supports remote servers: <code id="u"></code></p>
 
 <h2>Limits, honestly</h2>
-<p class="note">This runs on a shared free daily allowance, so it can run out. If it does, the page tells you and comes back at 00:00 UTC (05:30 IST). Small models make mistakes, and that is part of what you are looking at. Questions are sent to the model provider to get an answer; do not type anything private.</p>
+<p class="note">This runs on a shared free daily allowance, so it can run out. If it does, the page tells you and comes back at 00:00 UTC (05:30 IST). To keep it fair there is also a limit of 4 questions a minute and 25 a day per visitor. Small models make mistakes, and that is part of what you are looking at. Questions are sent to the model provider to get an answer; do not type anything private.</p>
 </main>
 <script>
 var API="https://lab-api.inlab-ptl.workers.dev";
@@ -60,13 +60,13 @@ function run(useTools){var p=$("q").value;if(!p.replace(/\s/g,""))return;
  $("out").insertBefore(card,$("out").firstChild);
  post("/api/chat",{prompt:p,useTools:useTools},function(j){
   $("b0").disabled=$("b1").disabled=false;var a=card.querySelector(".ans");a.className="ans";
-  if(j.error){a.className="ans err";a.textContent=j.error;return}
-  a.textContent=j.answer;
+  if(j.error){a.className="ans err";a.textContent=j.error}
+  else a.textContent=j.answer;
   if(useTools&&j.trace&&j.trace.length){var t=j.trace.map(function(s){
    if(s.method==="tools/list")return "tools/list -> "+s.result.join(", ");
    return "tools/call "+s.tool+" "+JSON.stringify(s.arguments)+"\n   -> "+s.result}).join("\n");
    var d=document.createElement("div");d.className="tr";d.textContent=t;card.appendChild(d)}
-  if(useTools&&j.trace&&j.trace.length<2){var n=document.createElement("div");n.className="note";n.textContent="The model chose not to call any tool this time.";card.appendChild(n)}
+  if(!j.error&&useTools&&j.trace&&j.trace.length<2){var n=document.createElement("div");n.className="note";n.textContent="The model chose not to call any tool this time.";card.appendChild(n)}
  })}
 $("b0").onclick=function(){run(false)};$("b1").onclick=function(){run(true)};
 </script></body></html>
