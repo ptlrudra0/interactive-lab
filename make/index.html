@@ -44,7 +44,7 @@ input[type=range]{width:100%;accent-color:#e4572e;margin:8px 0 0}
 <p class="mute">Type a topic or a story from the newsletter. A small AI model drafts a set of sliders and calculated results for it. Then you play with the sliders, and no AI is involved in that part. It only works for topics that can be turned into numbers you can change.</p>
 <div class="panel"><div class="lbl">Your topic</div>
 <input type="text" id="topic" maxlength="200" placeholder="e.g. how much a daily coffee habit costs over a year" autocomplete="off">
-<div><button class="chip" data-p="how much a daily coffee habit costs over a year">coffee habit</button><button class="chip" data-p="how screen brightness and screen time change phone battery life">phone battery</button><button class="chip" data-p="how saving a fixed amount monthly grows over the years">savings</button></div>
+<div><button class="chip" data-p="how much a daily coffee habit costs over a year">coffee habit</button><button class="chip" data-p="how screen brightness and screen time change phone battery life">phone battery</button><button class="chip" data-p="how long a road trip takes at different speeds with rest stops">road trip</button></div>
 <button class="acc" id="go">Make the experiment</button>
 <div id="stat" class="fine" role="status" aria-live="polite" style="margin-top:8px"></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div>
 <div id="exp"></div>
@@ -68,13 +68,15 @@ function parseF(src,known){
     if(x==="("){var n=expr();if(t[p++]!==")")throw new Error("missing )");return n}
     if(/^[A-Za-z_]/.test(x)){
       if(peek()==="("){if(!FUN.hasOwnProperty(x))throw new Error("unknown function "+x);p++;var args=[];if(peek()!==")"){args.push(expr());while(peek()===","){p++;args.push(expr())}}if(t[p++]!==")")throw new Error("missing )");if(args.length<1||args.length>3)throw new Error("bad arguments");return{o:"f",f:x,args:args}}
-      if(x==="pi")return{o:"n",v:Math.PI};
+      if(x==="pi")return{o:"n",v:Math.PI,pi:1};
       if(known.indexOf(x)<0)throw new Error("unknown name "+x);return{o:"v",v:x}}
     throw new Error("unexpected "+x)}
   var ast=expr();if(p!==t.length)throw new Error("unexpected "+t[p]);return ast}
 function ev(n,env){switch(n.o){case"n":return n.v;case"v":return env[n.v];case"neg":return-ev(n.a,env);
   case"+":return ev(n.a,env)+ev(n.b,env);case"-":return ev(n.a,env)-ev(n.b,env);case"*":return ev(n.a,env)*ev(n.b,env);case"/":return ev(n.a,env)/ev(n.b,env);
   case"^":return Math.pow(ev(n.a,env),ev(n.b,env));case"f":return FUN[n.f].apply(null,n.args.map(function(a){return ev(a,env)}))}throw new Error("bad node")}
+var UNITS=[0,1,2,3,4,5,6,7,10,12,24,52,60,100,365,1000,3600];
+function lits(n,f){if(n.o==="n"){if(!n.pi&&UNITS.indexOf(n.v)<0)throw new Error("formula contains the fixed number "+n.v+": every assumed rate or cost must be a visible slider")}else{if(n.a)lits(n.a,f);if(n.b)lits(n.b,f);if(n.args)n.args.forEach(function(a){lits(a,f)})}}
 function num(x){return typeof x==="number"&&isFinite(x)}
 function str(x,max){return typeof x==="string"&&x.trim().length>0&&x.length<=max}
 function validate(c){
@@ -83,7 +85,6 @@ function validate(c){
   var ID=/^[a-z][a-z0-9_]{0,15}$/,ids=[],out={title:"",intro:"",takeaway:"",inputs:[],toggles:[],outputs:[]};
   if(!str(c.title,80))throw new Error("title missing");out.title=c.title.trim();
   if(!str(c.intro,260))throw new Error("intro missing or too long");out.intro=c.intro.trim();
-  if(c.takeaway!==undefined&&c.takeaway!==""){if(!str(c.takeaway,220))throw new Error("takeaway too long");out.takeaway=c.takeaway.trim()}
   if(!Array.isArray(c.inputs)||c.inputs.length<1||c.inputs.length>6)throw new Error("need 1 to 6 sliders");
   c.inputs.forEach(function(x){
     if(!x||!ID.test(x.id)||ids.indexOf(x.id)>=0||x.id==="pi"||FUN.hasOwnProperty(x.id))throw new Error("bad slider id");
@@ -99,22 +100,26 @@ function validate(c){
   c.outputs.forEach(function(x){
     if(!x||!ID.test(x.id)||known.indexOf(x.id)>=0||x.id==="pi"||FUN.hasOwnProperty(x.id))throw new Error("bad result id");
     if(!str(x.label,60))throw new Error("result label missing");
-    var ast=parseF(x.formula,known);
+    var ast=parseF(x.formula,known);lits(ast);
     var dec=x.decimals===undefined?1:x.decimals;if(!(dec===0||dec===1||dec===2||dec===3||dec===4))throw new Error("bad decimals");
     var mx=x.max===undefined?0:x.max;if(!num(mx)||mx<0)throw new Error("bad max");
     if(x.unit!==undefined&&x.unit!==""&&!str(x.unit,16))throw new Error("bad unit");
     known.push(x.id);out.outputs.push({id:x.id,label:x.label.trim(),formula:x.formula.trim(),ast:ast,unit:x.unit||"",decimals:dec,max:mx})});
-  // sanity: every result must be finite at defaults and at the slider corners
-  var pts=[{},{lo:1},{hi:1}];
-  for(var k=0;k<pts.length;k++){var env={};
-    out.inputs.forEach(function(x){env[x.id]=pts[k].lo?x.min:pts[k].hi?x.max:x.value});out.toggles.forEach(function(x){env[x.id]=x.value});
-    out.outputs.forEach(function(o){var v=ev(o.ast,env);if(!num(v)||Math.abs(v)>1e15)throw new Error("result "+o.label+" is not a usable number at some settings");env[o.id]=v})}
+  // sanity: sample a grid (min, quarter points, middle, max) plus random points; every result must be finite everywhere sampled
+  var grids=out.inputs.map(function(x){var g=[0,.25,.5,.75,1].map(function(f){var v=x.min+f*(x.max-x.min);return Math.round((v-x.min)/x.step)*x.step+x.min});return g.concat([x.value])});
+  var total=1;grids.forEach(function(g){total*=g.length});
+  var n=Math.min(total,3000);
+  for(var k=0;k<n+200;k++){var env={},r=k;
+    out.inputs.forEach(function(x,i){var g=grids[i];if(k<n){env[x.id]=g[r%g.length];r=Math.floor(r/g.length)}else env[x.id]=x.min+Math.round(Math.random()*(x.max-x.min)/x.step)*x.step});
+    for(var m=0;m<(1<<out.toggles.length);m++){out.toggles.forEach(function(x,i){env[x.id]=(m>>i)&1});var e2={};for(var q in env)e2[q]=env[q];
+      out.outputs.forEach(function(o){var v=ev(o.ast,e2);if(!num(v)||Math.abs(v)>1e15)throw new Error("result "+o.label+" is not a usable number at some settings");e2[o.id]=v})}}
   return out}
-function compute(cfg,env){var e={};for(var k in env)e[k]=env[k];return cfg.outputs.map(function(o){var v=ev(o.ast,e);e[o.id]=v;return v})}
+function compute(cfg,env){var e={};for(var k in env)e[k]=env[k];var bad=false;return cfg.outputs.map(function(o){var v=bad?NaN:ev(o.ast,e);if(!num(v)||Math.abs(v)>1e15){bad=true;return null}e[o.id]=v;return v})}
 
 var $=function(i){return document.getElementById(i)};
+var BLOCK=/health|medic|drug|dose|dosage|symptom|disease|diet|calorie|pregnan|therap|invest|stock|crypto|loan|mortgage|retire|tax\b|taxes|insur|lawsuit|legal|\blaw\b|safety|safe to|toxic|poison|weapon/i;
 var API="https://text.pollinations.ai/openai",GAP=31000,lastCall=0,busy=false;
-var SYS='You design small what-if calculators. Reply with ONE JSON object and nothing else, no markdown. Format: {"title":"...","intro":"one or two sentences","inputs":[{"id":"price","label":"Price per cup","min":1,"max":10,"step":0.5,"value":4,"unit":"$"}],"toggles":[{"id":"home","label":"Make it at home instead","value":0}],"outputs":[{"id":"year","label":"Cost per year","formula":"price*cups*365*(1-home*0.7)","unit":"$","decimals":0,"max":5000}],"takeaway":"one sentence on what to notice"}. Rules: 1 to 6 inputs, 0 to 3 toggles (value 0 or 1, used as 0 or 1 in formulas), 1 to 4 outputs. ids are lowercase letters, digits and underscores, start with a letter, max 16 characters. Formulas use only numbers, ids of inputs, toggles and EARLIER outputs, + - * / ^ ( ) and the functions min max abs round sqrt floor ceil pow. Every number you use must be a stated assumption a reader could change, so prefer sliders for assumptions. Each input value must lie between min and max. If the topic cannot be turned into numeric sliders (for example it needs live data, personal facts or is not quantitative), reply {"unsupported":"short reason"} instead.';
+var SYS='You design small what-if calculators that only do arithmetic. Reply with ONE JSON object and nothing else, no markdown. Format: {\"title\":\"...\",\"intro\":\"one or two sentences saying what the calculator computes, with no factual claims\",\"inputs\":[{\"id\":\"price\",\"label\":\"Price per cup\",\"min\":1,\"max\":10,\"step\":0.5,\"value\":4,\"unit\":\"$\"}],\"toggles\":[{\"id\":\"home\",\"label\":\"Brew at home instead\",\"value\":0}],\"outputs\":[{\"id\":\"year\",\"label\":\"Cost per year\",\"formula\":\"cups*365*(price*(1-home)+homeprice*home)\",\"unit\":\"$\",\"decimals\":0,\"max\":5000}]}. Rules: 1 to 6 inputs, 0 to 3 toggles (value 0 or 1, used as 0 or 1 in formulas), 1 to 4 outputs. ids are lowercase letters, digits and underscores, start with a letter, max 16 characters. Formulas use only ids of inputs, toggles and EARLIER outputs, + - * / ^ ( ) and the functions min max abs round sqrt floor ceil pow. The only numbers allowed inside a formula are unit conversions: 0 1 2 3 4 5 6 7 10 12 24 52 60 100 365 1000 3600. Every other number, such as a rate, price, percentage or saving, MUST be a slider the reader can change; never hide an assumption in a formula. Slider values are illustrative starting points. Do not state facts, statistics or recommendations anywhere. Never avoid a division by zero by hiding it: formulas must be finite over the whole slider ranges. If the topic is about health, medicine, diet, money decisions, investing, loans, tax, law or safety, or cannot be turned into numeric sliders (live data, personal facts, not quantitative), reply {\"unsupported\":\"short reason\"} instead.';
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
 function status(t,p){$("stat").textContent=t;if(p===undefined)$("bar").hidden=true;else{$("bar").hidden=false;$("bari").style.width=p+"%"}}
 async function slot(){var w=lastCall+GAP-Date.now();while(w>0){status("Waiting for the free model slot: "+Math.ceil(w/1000)+"s",Math.round((1-w/GAP)*100));await sleep(400);w=lastCall+GAP-Date.now()}}
@@ -132,25 +137,24 @@ function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=c
 function fmt(v,d){return v.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d})}
 function render(cfg,topic){
   var root=$("exp");root.textContent="";
-  var w=el("div","warn","Drafted by a small AI model from your topic. It can be wrong: open How this is calculated and check the formulas and assumptions. The sliders below run in your browser with no model.");
+  var w=el("div","warn","Illustrative only. A small AI model drafted these sliders and formulas from your topic. The starting numbers are its guesses, not facts, so set them to your own. Check the formulas under How this is calculated. The sliders run in your browser with no model.");
   root.appendChild(w);
   var card=el("div","card t");card.appendChild(el("div","lbl","Generated experiment: "+topic.slice(0,80)));card.appendChild(el("h2",null,cfg.title));card.lastChild.style.margin="4px 0 6px";card.appendChild(el("p","mute",cfg.intro));root.appendChild(card);
   var pan=el("div","panel");pan.appendChild(el("div","lbl","Change these"));
   var env={},vals={};
   var res=el("div","panel");res.appendChild(el("div","lbl","What you get"));
   var rows=cfg.outputs.map(function(o){var r=el("div","res");var nm=el("div","nm",o.label);var big=el("div","big");var u=el("span","u");big.appendChild(document.createTextNode(""));var bar=el("div","bar");var bi=el("i");bar.appendChild(bi);r.appendChild(nm);r.appendChild(big);if(o.max>0)r.appendChild(bar);res.appendChild(r);return{big:big,u:u,bi:bi,o:o}});
-  function update(){var out=compute(cfg,env);rows.forEach(function(r,i){var v=out[i];r.big.textContent=fmt(v,r.o.decimals)+(r.o.unit?" "+r.o.unit:"");if(r.bi)r.bi.style.width=Math.max(0,Math.min(100,v/r.o.max*100))+"%"});
+  function update(){var out=compute(cfg,env);rows.forEach(function(r,i){var v=out[i];if(v===null){r.big.textContent="No valid result at this setting";r.big.className="big err";r.big.style.fontSize="18px";if(r.bi)r.bi.style.width="0%";return}r.big.className="big";r.big.style.fontSize="";r.big.textContent=fmt(v,r.o.decimals)+(r.o.unit?" "+r.o.unit:"");if(r.bi)r.bi.style.width=Math.max(0,Math.min(100,v/r.o.max*100))+"%"});
     cfg.inputs.forEach(function(x){vals[x.id].textContent=fmt(env[x.id],Math.min(4,(String(x.step).split(".")[1]||"").length))+(x.unit?" "+x.unit:"")})}
   cfg.inputs.forEach(function(x){env[x.id]=x.value;var s=el("div","sl");var top=el("div","top");top.appendChild(el("span",null,x.label));var v=el("span","v");vals[x.id]=v;top.appendChild(v);s.appendChild(top);
     var r=el("input");r.type="range";r.min=x.min;r.max=x.max;r.step=x.step;r.value=x.value;r.setAttribute("aria-label",x.label);r.oninput=function(){env[x.id]=parseFloat(r.value);update()};s.appendChild(r);pan.appendChild(s)});
   cfg.toggles.forEach(function(x){env[x.id]=x.value;var l=el("label","t");var c=el("input");c.type="checkbox";c.checked=!!x.value;c.onchange=function(){env[x.id]=c.checked?1:0;update()};l.appendChild(c);l.appendChild(el("span",null,x.label));pan.appendChild(l)});
   root.appendChild(pan);root.appendChild(res);
-  if(cfg.takeaway){var t=el("p","mute");t.appendChild(el("b",null,"Notice: "));t.appendChild(document.createTextNode(cfg.takeaway));root.appendChild(t)}
   var d=el("details");d.appendChild(el("summary",null,"How this is calculated"));var pre=el("div","tr");pre.textContent=cfg.outputs.map(function(o){return o.id+" = "+o.formula+"   ("+o.label+")"}).join("\n")+"\n\nNames: "+cfg.inputs.concat(cfg.toggles).map(function(x){return x.id+" = "+x.label}).join("; ");d.appendChild(pre);root.appendChild(d);
   update()}
 function fail(msg){status("",undefined);$("exp").textContent="";var c=el("div","card");c.appendChild(el("div","lbl","Could not make this one"));c.appendChild(el("p","err",msg));$("exp").appendChild(c)}
 async function make(){
-  var topic=$("topic").value.trim().slice(0,200);if(!topic||busy)return;busy=true;$("go").disabled=true;$("exp").textContent="";
+  var topic=$("topic").value.trim().slice(0,200);if(!topic||busy)return;if(BLOCK.test(topic)){$("exp").textContent="";fail("This tool does not make experiments about health, medicine, diet, investing, loans, tax, law or safety decisions, because a generated calculator could be mistaken for advice. Try a topic that is just arithmetic, like a price times a quantity.");return}busy=true;$("go").disabled=true;$("exp").textContent="";
   try{
     var txt=await ask(topic),cfg;
     try{cfg=validate(parseReply(txt))}catch(e){throw new Error("The model's draft did not pass the page's checks ("+e.message+"), so nothing was built. Try rewording the topic so it is about numbers you can change.")}
