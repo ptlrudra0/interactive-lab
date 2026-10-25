@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What changes when an AI can use tools? - Interactive Newsletter Lab</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>:root{--ink:#14141a;--mute:#5d5f6a;--line:#e6e6ea;--acc:#e4572e;--clay:#f4f4f6}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#fff;color:var(--ink);font:17px/1.55 Figtree,-apple-system,Helvetica,Arial,sans-serif}
+main{max-width:680px;margin:0 auto;padding:22px 18px 70px}
+h1,h2{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01em;line-height:1.12;margin:0}
+h1{font-size:34px;margin:6px 0 10px}h2{font-size:22px;margin:34px 0 8px}
+p{margin:8px 0}.mute{color:var(--mute)}.small{font-size:14px}
+.kick{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);font-weight:700}
+a{color:var(--ink)}
+.panel{background:var(--clay);border-radius:18px;padding:16px;margin:14px 0;box-shadow:inset 0 2px 5px rgba(20,20,26,.08),inset 0 -1px 0 #fff}
+.lbl{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:0 0 8px}
+textarea,input[type=text],select{width:100%;font:inherit;padding:11px 12px;border:0;border-radius:12px;background:#fff;color:var(--ink);box-shadow:inset 0 2px 4px rgba(20,20,26,.12);-webkit-appearance:none}
+textarea{min-height:84px;resize:vertical}
+button{font:inherit;font-weight:600;padding:12px 16px;border-radius:14px;border:0;background:#fff;color:var(--ink);box-shadow:0 1px 0 #fff inset,0 2px 6px rgba(20,20,26,.14);margin:6px 8px 0 0;cursor:pointer}
+button.go{background:var(--ink);color:#fff}button.acc{background:var(--acc);color:#fff}
+button:disabled{opacity:.45;cursor:default}
+.chip{font-size:14px;font-weight:500;padding:7px 12px;border-radius:999px;margin:4px 6px 0 0}
+label.t{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}
+label.t:first-of-type{border-top:0}label.t input{margin-top:5px;width:18px;height:18px;flex:none}
+.tn{font-weight:700;font-size:15px}.td{font-size:14px;color:var(--mute)}
+.card{border-radius:18px;padding:16px;margin:14px 0;border:1px solid var(--line);background:#fff}
+.card.w{border-left:5px solid var(--ink)}.card.t{border-left:5px solid var(--acc)}
+.ans{white-space:pre-wrap;font-size:18px}.err{color:#b3261e}
+.tr{font:13px/1.45 Menlo,Consolas,monospace;background:var(--clay);border-radius:12px;padding:10px;margin-top:10px;white-space:pre-wrap;word-break:break-word;overflow-x:auto}
+details{margin-top:8px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
+.bar{height:6px;border-radius:6px;background:#e8e8ec;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s linear}
+.row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1 1 140px}
+.fine{font-size:14px;color:var(--mute)}
+code{font:13px Menlo,Consolas,monospace;background:var(--clay);padding:1px 5px;border-radius:5px;word-break:break-all}
+</style></head><body><main>
+<p class="small"><a href="../">&larr; All experiments</a></p>
+<div class="kick">Experiment 1</div>
+<h1>What changes when an AI can use tools?</h1>
+<p class="mute">MCP (Model Context Protocol) is a standard way for an AI app to find tools on a server and call them. Below is a real MCP server and client running in your tab. Ask a question with the model on its own, then with tools. Then change the setup and ask again.</p>
+
+<div class="panel"><div class="lbl">1. Your notes (optional)</div>
+<textarea id="notes" maxlength="2000" placeholder="Paste a few lines. The search_notes tool can read only this box."></textarea>
+<p class="fine" style="margin:6px 0 0">Stays in your browser except where a tool result is sent to the model as part of a question.</p></div>
+
+<div class="panel"><div class="lbl">2. Tools the AI may use</div><div id="tools"><p class="fine">Starting the MCP server...</p></div>
+<details id="mk"><summary>Build your own tool</summary>
+<p class="fine">Two safe kinds. A lookup tool answers from a list you type. A template tool fills in a sentence. Neither can run code or reach the internet.</p>
+<input type="text" id="cn" maxlength="31" placeholder="tool name, e.g. capital_of" autocapitalize="off" autocorrect="off">
+<div style="height:8px"></div><input type="text" id="cd" maxlength="200" placeholder="what it does, in one sentence (the AI reads this)">
+<div style="height:8px"></div><select id="ck"><option value="lookup">Lookup list (key = value, one per line)</option><option value="template">Template ({word} placeholders become inputs)</option></select>
+<div style="height:8px"></div><textarea id="cb" maxlength="1000" placeholder="France = Paris&#10;India = New Delhi"></textarea>
+<button id="cadd" class="go">Add tool</button><span id="cmsg" class="fine"></span></details></div>
+
+<div class="panel"><div class="lbl">3. Ask</div>
+<div><button class="chip" data-p="What is 48213 * 927?">48213 &times; 927</button><button class="chip" data-p="How many times does the letter r appear in 'strawberry raspberry'?">count letters</button><button class="chip" data-p="What weekday was 2026-03-14, and how many days are there from then to 2026-12-25?">dates</button><button class="chip" data-p="Which of my notes mention MCP?">search my notes</button></div>
+<div style="height:8px"></div><textarea id="q" maxlength="500" placeholder="Ask anything..."></textarea>
+<button class="go" id="b0">Ask without tools</button><button class="acc" id="b1">Ask with MCP tools</button>
+<div class="bar" id="bar" hidden><i id="bari"></i></div><p class="fine" id="stat" style="margin-bottom:0"></p></div>
+<div id="out"></div>
+
+<h2>Read this first</h2>
+<p class="fine">The MCP server and client are both real (the official MCP SDK) but run inside this page and talk through the SDK's in-memory link, not over the network. The AI model is a separate free service, Pollinations, called straight from your browser with no account. Its documentation says free requests are limited per IP address to one at a time, at least 30 seconds apart, so each answer is slow and a tools question needs two or more model calls. It is best effort and can fail. Small models get things wrong; that is part of what you are seeing. Your question and any tool results are sent to Pollinations and its model providers, so do not type anything private. Pollinations says its service is for people aged 16 and over.</p>
+</main>
+<script src="../mcp2.bundle.js"></script>
+<script>
+var $=function(i){return document.getElementById(i)};
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function clean(t){return String(t||"").replace(/\*\*/g,"").replace(/`/g,"").trim()}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+var API="https://text.pollinations.ai/openai",SYS="You are a helpful assistant. Answer briefly (under 80 words). Use a tool when one fits the question.",GAP=31000;
+var lastCall=0,busy=false,mcp=null,mcpTools=[],custom=[];
+var BI=["calculate","count_text","days_between","weekday_of","search_notes"];
+var on={calculate:1,count_text:1,days_between:1,weekday_of:1,search_notes:1};
+function setBusy(b){busy=b;var els=document.querySelectorAll("button,textarea,input,select");for(var i=0;i<els.length;i++)els[i].disabled=b}
+async function rebuild(){
+  var enabled=BI.filter(function(n){return on[n]});
+  try{mcp=await window.buildMcp({enabled:enabled,notes:$("notes").value,custom:custom});mcpTools=(await mcp.listTools()).tools}
+  catch(e){mcp=null;mcpTools=[];$("tools").innerHTML='<p class="fine err">The in-browser MCP server did not start: '+esc(e&&e.message||e)+'</p>';return}
+  drawTools()}
+var DESC={};
+function drawTools(){
+  var h="";mcpTools.forEach(function(t){DESC[t.name]=t.description});
+  BI.forEach(function(n){var d=DESC[n]||"";h+='<label class="t"><input type="checkbox" data-n="'+n+'"'+(on[n]?" checked":"")+'><span><span class="tn">'+n+'</span><br><span class="td">'+esc(d||{calculate:"Exact arithmetic.",count_text:"Count characters, words and a letter.",days_between:"Days between two dates.",weekday_of:"Weekday of a date.",search_notes:"Search your notes."}[n])+'</span></span></label>'});
+  custom.forEach(function(c,i){h+='<label class="t"><span style="width:28px;flex:none"></span><span><span class="tn">'+esc(c.name)+'</span> <span class="td">(yours, '+c.kind+')</span><br><span class="td">'+esc(c.description||"")+'</span><br><button data-rm="'+i+'" class="chip">Remove</button></span></label>'});
+  $("tools").innerHTML=h;
+  var cb=$("tools").querySelectorAll("input[data-n]");for(var i=0;i<cb.length;i++)cb[i].onchange=function(){on[this.getAttribute("data-n")]=this.checked?1:0;rebuild()};
+  var rm=$("tools").querySelectorAll("button[data-rm]");for(var j=0;j<rm.length;j++)rm[j].onclick=function(){custom.splice(+this.getAttribute("data-rm"),1);rebuild()}}
+var nt=null;$("notes").oninput=function(){clearTimeout(nt);nt=setTimeout(rebuild,500)};
+$("cadd").onclick=function(){
+  var n=$("cn").value.trim().toLowerCase(),m=$("cmsg");
+  if(!/^[a-z][a-z0-9_]{1,30}$/.test(n)){m.textContent="Name: letters, digits, underscore, start with a letter.";return}
+  if(BI.indexOf(n)>-1||custom.some(function(c){return c.name===n})){m.textContent="That name is taken.";return}
+  if(custom.length>=5){m.textContent="Up to 5 custom tools.";return}
+  var kind=$("ck").value,body=$("cb").value;if(!body.trim()){m.textContent="Add the list or template.";return}
+  custom.push({name:n,description:$("cd").value.trim()||"A custom tool.",kind:kind,rows:kind==="lookup"?body:"",template:kind==="template"?body:""});
+  m.textContent="Added.";$("cn").value=$("cd").value=$("cb").value="";rebuild()};
+var chips=document.querySelectorAll(".chip[data-p]");for(var i=0;i<chips.length;i++)chips[i].onclick=function(){$("q").value=this.getAttribute("data-p")};
+function status(t,p){$("stat").textContent=t;if(p===undefined){$("bar").hidden=true}else{$("bar").hidden=false;$("bari").style.width=p+"%"}}
+async function slot(label){var w=lastCall+GAP-Date.now();while(w>0){status(label+" Waiting for the free model slot: "+Math.ceil(w/1000)+"s",Math.round((1-w/GAP)*100));await sleep(400);w=lastCall+GAP-Date.now()}}
+async function model(messages,tools,label){
+  await slot(label);status(label+" Asking the model...",100);lastCall=Date.now();
+  var body={model:"openai",messages:messages,max_tokens:300,seed:Math.floor(Math.random()*1e9)};if(tools&&tools.length)body.tools=tools;
+  var r;try{r=await fetch(API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})}catch(e){throw {msg:"Could not reach the model service."}}
+  if(r.status===402||r.status===429){lastCall=Date.now();throw {msg:"The free slot is not ready yet (the service said to wait). Nothing was charged. Try again in about 30 seconds."}}
+  if(!r.ok)throw {msg:"The model service returned an error ("+r.status+")."};
+  var j;try{j=await r.json()}catch(e){throw {msg:"Unexpected reply from the model service."}}
+  var m=j.choices&&j.choices[0]&&j.choices[0].message;if(!m)throw {msg:"The model service returned no answer."};return m}
+async function run(useTools){
+  var p=$("q").value.slice(0,500);if(!p.replace(/\s/g,"")||busy)return;
+  if(useTools&&!mcp){return}
+  setBusy(true);
+  var names=mcpTools.map(function(t){return t.name});
+  var card=document.createElement("div");card.className="card "+(useTools?"t":"w");
+  card.innerHTML='<div class="lbl">'+(useTools?"With MCP tools ("+names.length+" available)":"Without tools")+'</div><p class="mute small" style="margin:0 0 6px">'+esc(p)+'</p><div class="ans mute">Starting...</div>';
+  $("out").insertBefore(card,$("out").firstChild);var a=card.querySelector(".ans");
+  var trace=[],raw=[];
+  function show(){if(!trace.length)return;var d=card.querySelector(".tr");if(!d){d=document.createElement("div");d.className="tr";card.appendChild(d)}d.textContent=trace.join("\n");
+    var dt=card.querySelector("details");if(!dt){dt=document.createElement("details");dt.innerHTML="<summary>Raw MCP messages (as the client sent and received them)</summary><div class='tr'></div>";card.appendChild(dt)}dt.querySelector(".tr").textContent=raw.join("\n\n")}
+  try{
+    var messages=[{role:"system",content:SYS},{role:"user",content:p}],tools;
+    if(useTools){
+      var lt=await mcp.listTools();raw.push("client -> server: "+JSON.stringify({jsonrpc:"2.0",method:"tools/list"}));raw.push("server -> client: "+JSON.stringify({result:lt}));
+      trace.push("tools/list -> "+(lt.tools.map(function(t){return t.name}).join(", ")||"(no tools enabled)"));
+      tools=lt.tools.map(function(t){return{type:"function",function:{name:t.name,description:t.description,parameters:t.inputSchema}}});show()}
+    var done=false;
+    for(var step=0;step<3&&!done;step++){
+      var m=await model(messages,tools,"Step "+(step+1)+".");var calls=m.tool_calls||[];
+      if(!calls.length){a.className="ans";a.textContent=clean(m.content)||"(no answer)";done=true;
+        if(useTools&&trace.length<2){var n=document.createElement("p");n.className="fine";n.textContent="The model chose not to call any tool this time.";card.appendChild(n)}break}
+      messages.push({role:"assistant",content:m.content||"",tool_calls:calls});
+      for(var k=0;k<calls.length;k++){var c=calls[k],args={};try{args=JSON.parse(c.function.arguments||"{}")}catch(e){}
+        var known=names.indexOf(c.function.name)>-1,txt;
+        if(!known)txt="Unknown tool";else{
+          raw.push("client -> server: "+JSON.stringify({jsonrpc:"2.0",method:"tools/call",params:{name:c.function.name,arguments:args}}));
+          try{var res=await mcp.callTool({name:c.function.name,arguments:args});raw.push("server -> client: "+JSON.stringify({result:res}));txt=(res.content&&res.content[0]&&res.content[0].text)||"";if(res.isError)txt="Error: "+txt}catch(e){txt="Error: "+(e&&e.message||e);raw.push("server -> client: error "+txt)}}
+        trace.push("tools/call "+c.function.name+" "+JSON.stringify(args)+"\n   -> "+txt);show();
+        messages.push({role:"tool",tool_call_id:c.id,content:txt})}}
+    if(!done){a.className="ans";a.textContent="Stopped after 3 rounds without a final answer."}
+  }catch(e){a.className="ans err";a.textContent=(e&&e.msg)||("Something went wrong: "+(e&&e.message||e));if(trace.length>1)a.textContent+=" The steps shown below did run; there is no final answer."}
+  status("");setBusy(false)}
+$("b0").onclick=function(){run(false)};$("b1").onclick=function(){run(true)};
+rebuild();
+</script></body></html>
