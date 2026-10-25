@@ -1,95 +1,48 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Interactive Newsletter Lab</title>
-<style>
-*{box-sizing:border-box}body{margin:0;font:17px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#1d1d1f;background:#faf8f3}
-main{max-width:720px;margin:0 auto;padding:20px 16px 60px}
-h1{font-size:28px;line-height:1.15;margin:8px 0 4px}h2{font-size:20px;margin:28px 0 6px}
-p{margin:8px 0}.sub{color:#555}
-.card{background:#fff;border:1px solid #e3ded2;border-radius:12px;padding:14px;margin:12px 0}
-textarea{width:100%;font:inherit;padding:10px;border:1px solid #bbb;border-radius:8px;min-height:80px}
-button{font:inherit;padding:11px 14px;border-radius:10px;border:1px solid #1d1d1f;background:#fff;margin:6px 6px 0 0}
-button.p{background:#1d1d1f;color:#fff}button:disabled{opacity:.5}
-.chip{font-size:14px;padding:6px 10px;border-color:#bbb;background:#f4f1ea}
-.lbl{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#777;margin-bottom:4px}
-.ans{white-space:pre-wrap}.tr{font:13px/1.4 Menlo,monospace;background:#f4f1ea;border-radius:8px;padding:8px;margin-top:8px;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
-.note{font-size:14px;color:#666}.err{color:#a32}
-code{font:14px Menlo,monospace;background:#f1ede4;padding:1px 4px;border-radius:4px;word-break:break-all}
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interactive Newsletter Lab</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>:root{--ink:#14141a;--mute:#5d5f6a;--line:#e6e6ea;--acc:#e4572e;--clay:#f4f4f6}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#fff;color:var(--ink);font:17px/1.55 Figtree,-apple-system,Helvetica,Arial,sans-serif}
+main{max-width:680px;margin:0 auto;padding:22px 18px 70px}
+h1,h2{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01em;line-height:1.12;margin:0}
+h1{font-size:34px;margin:6px 0 10px}h2{font-size:22px;margin:34px 0 8px}
+p{margin:8px 0}.mute{color:var(--mute)}.small{font-size:14px}
+.kick{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);font-weight:700}
+a{color:var(--ink)}
+.panel{background:var(--clay);border-radius:18px;padding:16px;margin:14px 0;box-shadow:inset 0 2px 5px rgba(20,20,26,.08),inset 0 -1px 0 #fff}
+.lbl{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:0 0 8px}
+textarea,input[type=text],select{width:100%;font:inherit;padding:11px 12px;border:0;border-radius:12px;background:#fff;color:var(--ink);box-shadow:inset 0 2px 4px rgba(20,20,26,.12);-webkit-appearance:none}
+textarea{min-height:84px;resize:vertical}
+button{font:inherit;font-weight:600;padding:12px 16px;border-radius:14px;border:0;background:#fff;color:var(--ink);box-shadow:0 1px 0 #fff inset,0 2px 6px rgba(20,20,26,.14);margin:6px 8px 0 0;cursor:pointer}
+button.go{background:var(--ink);color:#fff}button.acc{background:var(--acc);color:#fff}
+button:disabled{opacity:.45;cursor:default}
+.chip{font-size:14px;font-weight:500;padding:7px 12px;border-radius:999px;margin:4px 6px 0 0}
+label.t{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}
+label.t:first-of-type{border-top:0}label.t input{margin-top:5px;width:18px;height:18px;flex:none}
+.tn{font-weight:700;font-size:15px}.td{font-size:14px;color:var(--mute)}
+.card{border-radius:18px;padding:16px;margin:14px 0;border:1px solid var(--line);background:#fff}
+.card.w{border-left:5px solid var(--ink)}.card.t{border-left:5px solid var(--acc)}
+.ans{white-space:pre-wrap;font-size:18px}.err{color:#b3261e}
+.tr{font:13px/1.45 Menlo,Consolas,monospace;background:var(--clay);border-radius:12px;padding:10px;margin-top:10px;white-space:pre-wrap;word-break:break-word;overflow-x:auto}
+details{margin-top:8px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
+.bar{height:6px;border-radius:6px;background:#e8e8ec;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s linear}
+.row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1 1 140px}
+.fine{font-size:14px;color:var(--mute)}
+code{font:13px Menlo,Consolas,monospace;background:var(--clay);padding:1px 5px;border-radius:5px;word-break:break-all}
+
+.hero{padding:20px 0 6px}a.exp{display:block;text-decoration:none;color:inherit}
+a.exp .card{transition:transform .15s}a.exp:active .card{transform:scale(.99)}
+.go2{display:inline-block;margin-top:8px;font-weight:700;color:var(--acc)}
 </style></head><body><main>
-<h1>Interactive Newsletter Lab</h1>
-<p class="sub">Small experiments you can poke at yourself. Nothing here is a recording: every answer below comes from a live model, called from your own browser, when you press the button.</p>
-
-<h2>Experiment 1: What does MCP change?</h2>
-<p>MCP (Model Context Protocol) is a standard way for an AI app to discover and call tools on a server. Ask the same question twice: once with the model on its own, once with it connected to a real MCP server that offers four small tools. When tools are on, you can see each call the model made and what the server returned.</p>
-<p class="note">Technical note: the MCP server here is a real one built with the official MCP SDK, and the page talks to it with the SDK's MCP client. Both run inside your browser tab and are connected by the SDK's in-memory transport, not over the network. The AI model itself is a remote service. Real MCP messages (tools/list, tools/call) are exchanged and shown below.</p>
-
-<div class="card">
-<div class="lbl">Try one, or write your own</div>
-<button class="chip" data-p="What is 48213 * 927?">48213 × 927</button>
-<button class="chip" data-p="How many times does the letter r appear in 'strawberry raspberry'?">count letters</button>
-<button class="chip" data-p="What weekday was 2026-03-14?">weekday of a date</button>
-<button class="chip" data-p="How many days are there between 2026-03-14 and 2026-12-25?">days between</button>
-<textarea id="q" maxlength="500" placeholder="Ask something with numbers, dates or letter counts..."></textarea>
-<button class="p" id="b0">Ask without tools</button><button class="p" id="b1">Ask with MCP tools</button>
-</div>
-<div id="out"></div>
-
-<div class="card"><div class="lbl">The tools on the MCP server (read via tools/list)</div><div id="tools" class="note">Loading...</div>
-<p class="note">The tools only work on text and numbers you type. They cannot reach the internet or anything else.</p></div>
-
-<h2>Limits, honestly</h2>
-<p class="note">The AI model is a free, no-account service run by Pollinations (<a href="https://pollinations.ai/terms">terms</a>, <a href="https://pollinations.ai/privacy">privacy</a>). Its documentation says free requests are limited per IP address to one at a time, at least 30 seconds apart. So each answer can take a while, and a "with tools" question needs two or more model calls. When the free slot is not ready the page says so and waits; it never pays for anything. It is best effort with no uptime promise, so it may fail or change. Small models make mistakes, and that is part of what you are looking at. Your question is sent to Pollinations and the model providers it uses. Do not type anything private. Pollinations says its service is for people aged 16 and over. This page needs a reasonably recent browser (Safari 12 or newer).</p>
-</main>
-<script src="mcp.bundle.js"></script>
-<script>
-var $=function(i){return document.getElementById(i)};
-function esc(s){return String(s).replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
-var API="https://text.pollinations.ai/openai",SYS="You are a helpful assistant. Answer briefly (under 80 words).",GAP=31000;
-var lastCall=0,busy=false,mcp=null,mcpTools=[];
-function clean(t){return String(t||"").replace(/\*\*/g,"").replace(/`/g,"").trim()}
-function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
-async function slot(note){var w=lastCall+GAP-Date.now();while(w>0){note("Waiting for the free model slot: "+Math.ceil(w/1000)+"s");await sleep(500);w=lastCall+GAP-Date.now()}}
-async function model(messages,tools,note){
-  await slot(note);note("Asking the model...");lastCall=Date.now();
-  var body={model:"openai",messages:messages,max_tokens:300,seed:Math.floor(Math.random()*1e9)};if(tools)body.tools=tools;
-  var r;try{r=await fetch(API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})}catch(e){throw {kind:"net",msg:"Could not reach the model service."}}
-  if(r.status===402||r.status===429){lastCall=Date.now();throw {kind:"limit",msg:"The free slot is not ready yet (the service said to wait). Nothing was charged. Try again in about 30 seconds."}}
-  if(!r.ok)throw {kind:"http",msg:"The model service returned an error ("+r.status+")."};
-  var j;try{j=await r.json()}catch(e){throw {kind:"http",msg:"Unexpected reply from the model service."}}
-  var m=j.choices&&j.choices[0]&&j.choices[0].message;if(!m)throw {kind:"http",msg:"The model service returned no answer."};return m}
-async function init(){
-  try{mcp=await window.startMcp();var l=await mcp.listTools();mcpTools=l.tools;
-   $("tools").innerHTML=l.tools.map(function(t){return "<p><b>"+esc(t.name)+"</b> - "+esc(t.description)+"</p>"}).join("");}
-  catch(e){$("tools").textContent="The in-browser MCP server did not start: "+(e&&e.message||e)}}
-init();
-var chips=document.querySelectorAll(".chip");for(var i=0;i<chips.length;i++)chips[i].onclick=function(){$("q").value=this.getAttribute("data-p")};
-async function run(useTools){
-  var p=$("q").value.slice(0,500);if(!p.replace(/\s/g,"")||busy)return;
-  if(useTools&&!mcp){return}
-  busy=true;$("b0").disabled=$("b1").disabled=true;
-  var card=document.createElement("div");card.className="card";card.innerHTML='<div class="lbl">'+(useTools?"With MCP tools":"Without tools")+' - '+esc(p)+'</div><div class="ans note">Starting...</div>';
-  $("out").insertBefore(card,$("out").firstChild);var a=card.querySelector(".ans");var note=function(t){a.textContent=t};
-  var trace=[];
-  function showTrace(){if(!trace.length)return;var d=card.querySelector(".tr");if(!d){d=document.createElement("div");d.className="tr";card.appendChild(d)}d.textContent=trace.join("\n")}
-  try{
-    var messages=[{role:"system",content:SYS},{role:"user",content:p}],tools;
-    if(useTools){trace.push("tools/list -> "+mcpTools.map(function(t){return t.name}).join(", "));
-      tools=mcpTools.map(function(t){return{type:"function",function:{name:t.name,description:t.description,parameters:t.inputSchema}}});showTrace()}
-    var done=false;
-    for(var step=0;step<3&&!done;step++){
-      var m=await model(messages,tools,note);var calls=m.tool_calls||[];
-      if(!calls.length){a.className="ans";a.textContent=clean(m.content)||"(no answer)";done=true;
-        if(useTools&&trace.length<2){var n=document.createElement("div");n.className="note";n.textContent="The model chose not to call any tool this time.";card.appendChild(n)}break}
-      messages.push({role:"assistant",content:m.content||"",tool_calls:calls});
-      for(var k=0;k<calls.length;k++){var c=calls[k],args={};try{args=JSON.parse(c.function.arguments||"{}")}catch(e){}
-        var known=mcpTools.some(function(t){return t.name===c.function.name}),txt;
-        if(!known)txt="Unknown tool";else{try{var res=await mcp.callTool({name:c.function.name,arguments:args});txt=(res.content&&res.content[0]&&res.content[0].text)||"";if(res.isError)txt="Error: "+txt}catch(e){txt="Error: "+(e&&e.message||e)}}
-        trace.push("tools/call "+c.function.name+" "+JSON.stringify(args)+"\n   -> "+txt);showTrace();
-        messages.push({role:"tool",tool_call_id:c.id,content:txt})}
-      if(step<2)note("Tool ran. Asking the model again...")}
-    if(!done){a.className="ans";a.textContent="Stopped after 3 rounds without a final answer."}
-  }catch(e){a.className="ans err";a.textContent=(e&&e.msg)||("Something went wrong: "+(e&&e.message||e));if(trace.length>1)a.textContent+=" The steps shown below did run; there is no final answer."}
-  busy=false;$("b0").disabled=$("b1").disabled=false}
-$("b0").onclick=function(){run(false)};$("b1").onclick=function(){run(true)};
-</script></body></html>
+<div class="hero"><div class="kick">Interactive Newsletter Lab</div>
+<h1>Try the idea, don't just read about it.</h1>
+<p class="mute">Small experiments that go with the stories in the newsletter. You choose what to ask, what to change and what to switch on. Every result comes from a live run, never a recording.</p></div>
+<h2>Experiments</h2>
+<a class="exp" href="mcp/"><div class="card t"><div class="kick">Experiment 1</div><h2 style="margin-top:4px">What changes when an AI can use tools?</h2>
+<p class="mute">Ask the same question with and without MCP tools. Switch tools on and off, give it your own notes, build your own tool, and watch the real messages.</p><span class="go2">Open the experiment &rarr;</span></div></a>
+<div class="card"><div class="lbl">Next</div><p class="mute" style="margin:0">More experiments will be added as new stories come up. Nothing here updates by itself yet.</p></div>
+<h2>Good to know</h2>
+<p class="fine">The AI model is a free, no-account service run by Pollinations (<a href="https://pollinations.ai/terms">terms</a>, <a href="https://pollinations.ai/privacy">privacy</a>). It is slow on purpose: its documentation allows one free request at a time, at least 30 seconds apart per IP address. It is best effort, so it can fail or change. Small models make mistakes, and that is part of the point. Your text is sent to Pollinations and the model providers it uses, so don't type anything private. Pollinations says its service is for people aged 16 and over. Needs a recent browser (Safari 12 or newer).</p>
+<p class="fine"><a href="v1.html">The first version of the lab</a> is still available.</p>
+</main></body></html>
