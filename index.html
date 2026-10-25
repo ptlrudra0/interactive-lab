@@ -89,7 +89,7 @@ async function run(useTools){
         messages.push({role:"tool",tool_call_id:c.id,content:txt})}
       if(step<2)note("Tool ran. Asking the model again...")}
     if(!done){a.className="ans";a.textContent="Stopped after 3 rounds without a final answer."}
-  }catch(e){a.className="ans err";a.textContent=(e&&e.msg)||("Something went wrong: "+(e&&e.message||e));if(trace.length)a.textContent+=" The steps shown below did run."}
+  }catch(e){a.className="ans err";a.textContent=(e&&e.msg)||("Something went wrong: "+(e&&e.message||e));if(trace.length>1)a.textContent+=" The steps shown below did run; there is no final answer."}
   busy=false;$("b0").disabled=$("b1").disabled=false}
 $("b0").onclick=function(){run(false)};$("b1").onclick=function(){run(true)};
 </script></body></html>
