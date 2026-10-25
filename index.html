@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interactive Newsletter Lab</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:17px/1.5 -apple-system,Helvetica,Arial,sans-serif;color:#1d1d1f;background:#faf8f3}
+main{max-width:720px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:28px;line-height:1.15;margin:8px 0 4px}h2{font-size:20px;margin:28px 0 6px}
+p{margin:8px 0}.sub{color:#555}
+.card{background:#fff;border:1px solid #e3ded2;border-radius:12px;padding:14px;margin:12px 0}
+textarea{width:100%;font:inherit;padding:10px;border:1px solid #bbb;border-radius:8px;min-height:80px}
+button{font:inherit;padding:11px 14px;border-radius:10px;border:1px solid #1d1d1f;background:#fff;margin:6px 6px 0 0}
+button.p{background:#1d1d1f;color:#fff}button:disabled{opacity:.5}
+.chip{font-size:14px;padding:6px 10px;border-color:#bbb;background:#f4f1ea}
+.lbl{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#777;margin-bottom:4px}
+.ans{white-space:pre-wrap}.tr{font:13px/1.4 Menlo,monospace;background:#f4f1ea;border-radius:8px;padding:8px;margin-top:8px;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.note{font-size:14px;color:#666}.err{color:#a32}
+code{font:14px Menlo,monospace;background:#f1ede4;padding:1px 4px;border-radius:4px;word-break:break-all}
+</style></head><body><main>
+<h1>Interactive Newsletter Lab</h1>
+<p class="sub">Small experiments you can poke at yourself. Nothing here is a recording: every answer below comes from a live model when you press the button.</p>
+
+<h2>Experiment 1: What does MCP change?</h2>
+<p>MCP (Model Context Protocol) is a standard way for an AI app to discover and call tools on a server. Ask the same question twice: once with the model on its own, once with it connected to a real MCP server that offers four small tools. When tools are on, you can see each call the model made and what the server returned.</p>
+
+<div class="card">
+<div class="lbl">Try one, or write your own</div>
+<button class="chip" data-p="What is 48213 * 927?">48213 × 927</button>
+<button class="chip" data-p="How many times does the letter r appear in 'strawberry raspberry'?">count letters</button>
+<button class="chip" data-p="What weekday was 2026-03-14?">weekday of a date</button>
+<button class="chip" data-p="How many days are there between 2026-03-14 and 2026-12-25?">days between</button>
+<textarea id="q" maxlength="500" placeholder="Ask something with numbers, dates or letter counts..."></textarea>
+<button class="p" id="b0">Ask without tools</button><button class="p" id="b1">Ask with MCP tools</button>
+</div>
+<div id="out"></div>
+
+<div class="card"><div class="lbl">The tools on the server (read live)</div><div id="tools" class="note">Loading...</div>
+<p class="note">The tools only work on text and numbers you type. They cannot reach the internet or anything else.</p></div>
+
+<h2>Use the server yourself</h2>
+<p class="note">The server speaks standard MCP over HTTP. Add this URL to any MCP client that supports remote servers: <code id="u"></code></p>
+
+<h2>Limits, honestly</h2>
+<p class="note">This runs on a shared free daily allowance, so it can run out. If it does, the page tells you and comes back at 00:00 UTC (05:30 IST). Small models make mistakes, and that is part of what you are looking at. Questions are sent to the model provider to get an answer; do not type anything private.</p>
+</main>
+<script>
+var API="https://lab-api.inlab-ptl.workers.dev";
+var $=function(i){return document.getElementById(i)};
+$("u").textContent=API+"/mcp";
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function post(path,body,cb){var x=new XMLHttpRequest();x.open("POST",API+path);x.setRequestHeader("content-type","application/json");
+ x.onload=function(){var j;try{j=JSON.parse(x.responseText)}catch(e){j={error:"Unexpected reply."}}cb(j)};x.onerror=function(){cb({error:"Could not reach the server."})};x.send(JSON.stringify(body))}
+post("/mcp",{jsonrpc:"2.0",id:1,method:"tools/list"},function(j){
+ if(!j.result){$("tools").textContent="Could not load the tool list.";return}
+ $("tools").innerHTML=j.result.tools.map(function(t){return "<p><b>"+esc(t.name)+"</b> - "+esc(t.description)+"</p>"}).join("")});
+var chips=document.querySelectorAll(".chip");for(var i=0;i<chips.length;i++)chips[i].onclick=function(){$("q").value=this.getAttribute("data-p")};
+function run(useTools){var p=$("q").value;if(!p.replace(/\s/g,""))return;
+ $("b0").disabled=$("b1").disabled=true;
+ var card=document.createElement("div");card.className="card";card.innerHTML='<div class="lbl">'+(useTools?"With MCP tools":"Without tools")+' - '+esc(p)+'</div><div class="ans note">Thinking...</div>';
+ $("out").insertBefore(card,$("out").firstChild);
+ post("/api/chat",{prompt:p,useTools:useTools},function(j){
+  $("b0").disabled=$("b1").disabled=false;var a=card.querySelector(".ans");a.className="ans";
+  if(j.error){a.className="ans err";a.textContent=j.error;return}
+  a.textContent=j.answer;
+  if(useTools&&j.trace&&j.trace.length){var t=j.trace.map(function(s){
+   if(s.method==="tools/list")return "tools/list -> "+s.result.join(", ");
+   return "tools/call "+s.tool+" "+JSON.stringify(s.arguments)+"\n   -> "+s.result}).join("\n");
+   var d=document.createElement("div");d.className="tr";d.textContent=t;card.appendChild(d)}
+  if(useTools&&j.trace&&j.trace.length<2){var n=document.createElement("div");n.className="note";n.textContent="The model chose not to call any tool this time.";card.appendChild(n)}
+ })}
+$("b0").onclick=function(){run(false)};$("b1").onclick=function(){run(true)};
+</script></body></html>
