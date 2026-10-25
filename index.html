@@ -18,11 +18,11 @@ button.p{background:#1d1d1f;color:#fff}button:disabled{opacity:.5}
 code{font:14px Menlo,monospace;background:#f1ede4;padding:1px 4px;border-radius:4px;word-break:break-all}
 </style></head><body><main>
 <h1>Interactive Newsletter Lab</h1>
-<p class="sub">Small experiments you can poke at yourself. Nothing here is a recording: every answer below comes from a live model when you press the button.</p>
+<p class="sub">Small experiments you can poke at yourself. Nothing here is a recording: every answer below comes from a live model, called from your own browser, when you press the button.</p>
 
 <h2>Experiment 1: What does MCP change?</h2>
 <p>MCP (Model Context Protocol) is a standard way for an AI app to discover and call tools on a server. Ask the same question twice: once with the model on its own, once with it connected to a real MCP server that offers four small tools. When tools are on, you can see each call the model made and what the server returned.</p>
-<p class="note">Technical note: in "with tools" mode this site's backend calls the same MCP handler in-process, using real MCP messages. The public URL further down is the same code, tested separately with the official SDK client. They are not two separate servers being compared.</p>
+<p class="note">Technical note: the MCP server here is a real one built with the official MCP SDK, and the page talks to it with the SDK's MCP client. Both run inside your browser tab and are connected by the SDK's in-memory transport, not over the network. The AI model itself is a remote service. Real MCP messages (tools/list, tools/call) are exchanged and shown below.</p>
 
 <div class="card">
 <div class="lbl">Try one, or write your own</div>
@@ -35,39 +35,60 @@ code{font:14px Menlo,monospace;background:#f1ede4;padding:1px 4px;border-radius:
 </div>
 <div id="out"></div>
 
-<div class="card"><div class="lbl">The tools on the server (read live)</div><div id="tools" class="note">Loading...</div>
+<div class="card"><div class="lbl">The tools on the MCP server (read via tools/list)</div><div id="tools" class="note">Loading...</div>
 <p class="note">The tools only work on text and numbers you type. They cannot reach the internet or anything else.</p></div>
 
-<h2>Use the server yourself</h2>
-<p class="note">The server speaks MCP over HTTP (Streamable HTTP, plain JSON replies). It has been tested only with the official MCP SDK client; other clients are untested. URL: <code id="u"></code></p>
-
 <h2>Limits, honestly</h2>
-<p class="note">This runs on a shared free daily allowance, so it can run out. If it does, the page tells you and comes back at 00:00 UTC (05:30 IST). To keep it fair there is also a limit of 4 questions a minute and 25 a day per visitor. Small models make mistakes, and that is part of what you are looking at. Questions are sent to the model provider to get an answer; do not type anything private.</p>
+<p class="note">The AI model is a free, no-account service run by Pollinations (<a href="https://pollinations.ai/terms">terms</a>, <a href="https://pollinations.ai/privacy">privacy</a>). Its documentation says free requests are limited per IP address to one at a time, at least 30 seconds apart. So each answer can take a while, and a "with tools" question needs two or more model calls. When the free slot is not ready the page says so and waits; it never pays for anything. It is best effort with no uptime promise, so it may fail or change. Small models make mistakes, and that is part of what you are looking at. Your question is sent to Pollinations and the model providers it uses. Do not type anything private. Pollinations says its service is for people aged 16 and over. This page needs a reasonably recent browser (Safari 12 or newer).</p>
 </main>
+<script src="mcp.bundle.js"></script>
 <script>
-var API="https://lab-api.inlab-ptl.workers.dev";
 var $=function(i){return document.getElementById(i)};
-$("u").textContent=API+"/mcp";
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
-function post(path,body,cb){var x=new XMLHttpRequest();x.open("POST",API+path);x.setRequestHeader("content-type","application/json");
- x.onload=function(){var j;try{j=JSON.parse(x.responseText)}catch(e){j={error:"Unexpected reply."}}cb(j)};x.onerror=function(){cb({error:"Could not reach the server."})};x.send(JSON.stringify(body))}
-post("/mcp",{jsonrpc:"2.0",id:1,method:"tools/list"},function(j){
- if(!j.result){$("tools").textContent="Could not load the tool list.";return}
- $("tools").innerHTML=j.result.tools.map(function(t){return "<p><b>"+esc(t.name)+"</b> - "+esc(t.description)+"</p>"}).join("")});
+var API="https://text.pollinations.ai/openai",SYS="You are a helpful assistant. Answer briefly (under 80 words).",GAP=31000;
+var lastCall=0,busy=false,mcp=null,mcpTools=[];
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+async function slot(note){var w=lastCall+GAP-Date.now();while(w>0){note("Waiting for the free model slot: "+Math.ceil(w/1000)+"s");await sleep(500);w=lastCall+GAP-Date.now()}}
+async function model(messages,tools,note){
+  await slot(note);note("Asking the model...");lastCall=Date.now();
+  var body={model:"openai",messages:messages,max_tokens:300,seed:Math.floor(Math.random()*1e9)};if(tools)body.tools=tools;
+  var r;try{r=await fetch(API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})}catch(e){throw {kind:"net",msg:"Could not reach the model service."}}
+  if(r.status===402||r.status===429){lastCall=Date.now();throw {kind:"limit",msg:"The free slot is not ready yet (the service said to wait). Nothing was charged. Try again in about 30 seconds."}}
+  if(!r.ok)throw {kind:"http",msg:"The model service returned an error ("+r.status+")."};
+  var j;try{j=await r.json()}catch(e){throw {kind:"http",msg:"Unexpected reply from the model service."}}
+  var m=j.choices&&j.choices[0]&&j.choices[0].message;if(!m)throw {kind:"http",msg:"The model service returned no answer."};return m}
+async function init(){
+  try{mcp=await window.startMcp();var l=await mcp.listTools();mcpTools=l.tools;
+   $("tools").innerHTML=l.tools.map(function(t){return "<p><b>"+esc(t.name)+"</b> - "+esc(t.description)+"</p>"}).join("");}
+  catch(e){$("tools").textContent="The in-browser MCP server did not start: "+(e&&e.message||e)}}
+init();
 var chips=document.querySelectorAll(".chip");for(var i=0;i<chips.length;i++)chips[i].onclick=function(){$("q").value=this.getAttribute("data-p")};
-function run(useTools){var p=$("q").value;if(!p.replace(/\s/g,""))return;
- $("b0").disabled=$("b1").disabled=true;
- var card=document.createElement("div");card.className="card";card.innerHTML='<div class="lbl">'+(useTools?"With MCP tools":"Without tools")+' - '+esc(p)+'</div><div class="ans note">Thinking...</div>';
- $("out").insertBefore(card,$("out").firstChild);
- post("/api/chat",{prompt:p,useTools:useTools},function(j){
-  $("b0").disabled=$("b1").disabled=false;var a=card.querySelector(".ans");a.className="ans";
-  if(j.error){a.className="ans err";a.textContent=j.error}
-  else a.textContent=j.answer;
-  if(useTools&&j.trace&&j.trace.length){var t=j.trace.map(function(s){
-   if(s.method==="tools/list")return "tools/list -> "+s.result.join(", ");
-   return "tools/call "+s.tool+" "+JSON.stringify(s.arguments)+"\n   -> "+s.result}).join("\n");
-   var d=document.createElement("div");d.className="tr";d.textContent=t;card.appendChild(d)}
-  if(!j.error&&useTools&&j.trace&&j.trace.length<2){var n=document.createElement("div");n.className="note";n.textContent="The model chose not to call any tool this time.";card.appendChild(n)}
- })}
+async function run(useTools){
+  var p=$("q").value.slice(0,500);if(!p.replace(/\s/g,"")||busy)return;
+  if(useTools&&!mcp){return}
+  busy=true;$("b0").disabled=$("b1").disabled=true;
+  var card=document.createElement("div");card.className="card";card.innerHTML='<div class="lbl">'+(useTools?"With MCP tools":"Without tools")+' - '+esc(p)+'</div><div class="ans note">Starting...</div>';
+  $("out").insertBefore(card,$("out").firstChild);var a=card.querySelector(".ans");var note=function(t){a.textContent=t};
+  var trace=[];
+  function showTrace(){if(!trace.length)return;var d=card.querySelector(".tr");if(!d){d=document.createElement("div");d.className="tr";card.appendChild(d)}d.textContent=trace.join("\n")}
+  try{
+    var messages=[{role:"system",content:SYS},{role:"user",content:p}],tools;
+    if(useTools){trace.push("tools/list -> "+mcpTools.map(function(t){return t.name}).join(", "));
+      tools=mcpTools.map(function(t){return{type:"function",function:{name:t.name,description:t.description,parameters:t.inputSchema}}});showTrace()}
+    var done=false;
+    for(var step=0;step<3&&!done;step++){
+      var m=await model(messages,tools,note);var calls=m.tool_calls||[];
+      if(!calls.length){a.className="ans";a.textContent=(m.content||"").trim()||"(no answer)";done=true;
+        if(useTools&&trace.length<2){var n=document.createElement("div");n.className="note";n.textContent="The model chose not to call any tool this time.";card.appendChild(n)}break}
+      messages.push({role:"assistant",content:m.content||"",tool_calls:calls});
+      for(var k=0;k<calls.length;k++){var c=calls[k],args={};try{args=JSON.parse(c.function.arguments||"{}")}catch(e){}
+        var known=mcpTools.some(function(t){return t.name===c.function.name}),txt;
+        if(!known)txt="Unknown tool";else{try{var res=await mcp.callTool({name:c.function.name,arguments:args});txt=(res.content&&res.content[0]&&res.content[0].text)||"";if(res.isError)txt="Error: "+txt}catch(e){txt="Error: "+(e&&e.message||e)}}
+        trace.push("tools/call "+c.function.name+" "+JSON.stringify(args)+"\n   -> "+txt);showTrace();
+        messages.push({role:"tool",tool_call_id:c.id,content:txt})}
+      if(step<2)note("Tool ran. Asking the model again...")}
+    if(!done){a.className="ans";a.textContent="Stopped after 3 rounds without a final answer."}
+  }catch(e){a.className="ans err";a.textContent=(e&&e.msg)||("Something went wrong: "+(e&&e.message||e));if(trace.length)a.textContent+=" The steps shown below did run."}
+  busy=false;$("b0").disabled=$("b1").disabled=false}
 $("b0").onclick=function(){run(false)};$("b1").onclick=function(){run(true)};
 </script></body></html>
