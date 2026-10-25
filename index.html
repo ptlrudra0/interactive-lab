@@ -47,6 +47,7 @@ var $=function(i){return document.getElementById(i)};
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
 var API="https://text.pollinations.ai/openai",SYS="You are a helpful assistant. Answer briefly (under 80 words).",GAP=31000;
 var lastCall=0,busy=false,mcp=null,mcpTools=[];
+function clean(t){return String(t||"").replace(/\*\*/g,"").replace(/`/g,"").trim()}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
 async function slot(note){var w=lastCall+GAP-Date.now();while(w>0){note("Waiting for the free model slot: "+Math.ceil(w/1000)+"s");await sleep(500);w=lastCall+GAP-Date.now()}}
 async function model(messages,tools,note){
@@ -78,7 +79,7 @@ async function run(useTools){
     var done=false;
     for(var step=0;step<3&&!done;step++){
       var m=await model(messages,tools,note);var calls=m.tool_calls||[];
-      if(!calls.length){a.className="ans";a.textContent=(m.content||"").trim()||"(no answer)";done=true;
+      if(!calls.length){a.className="ans";a.textContent=clean(m.content)||"(no answer)";done=true;
         if(useTools&&trace.length<2){var n=document.createElement("div");n.className="note";n.textContent="The model chose not to call any tool this time.";card.appendChild(n)}break}
       messages.push({role:"assistant",content:m.content||"",tool_calls:calls});
       for(var k=0;k<calls.length;k++){var c=calls[k],args={};try{args=JSON.parse(c.function.arguments||"{}")}catch(e){}
