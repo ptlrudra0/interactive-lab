@@ -22,6 +22,7 @@ code{font:14px Menlo,monospace;background:#f1ede4;padding:1px 4px;border-radius:
 
 <h2>Experiment 1: What does MCP change?</h2>
 <p>MCP (Model Context Protocol) is a standard way for an AI app to discover and call tools on a server. Ask the same question twice: once with the model on its own, once with it connected to a real MCP server that offers four small tools. When tools are on, you can see each call the model made and what the server returned.</p>
+<p class="note">Technical note: in "with tools" mode this site's backend calls the same MCP handler in-process, using real MCP messages. The public URL further down is the same code, tested separately with the official SDK client. They are not two separate servers being compared.</p>
 
 <div class="card">
 <div class="lbl">Try one, or write your own</div>
@@ -38,7 +39,7 @@ code{font:14px Menlo,monospace;background:#f1ede4;padding:1px 4px;border-radius:
 <p class="note">The tools only work on text and numbers you type. They cannot reach the internet or anything else.</p></div>
 
 <h2>Use the server yourself</h2>
-<p class="note">The server speaks standard MCP over HTTP. Add this URL to any MCP client that supports remote servers: <code id="u"></code></p>
+<p class="note">The server speaks MCP over HTTP (Streamable HTTP, plain JSON replies). It has been tested only with the official MCP SDK client; other clients are untested. URL: <code id="u"></code></p>
 
 <h2>Limits, honestly</h2>
 <p class="note">This runs on a shared free daily allowance, so it can run out. If it does, the page tells you and comes back at 00:00 UTC (05:30 IST). To keep it fair there is also a limit of 4 questions a minute and 25 a day per visitor. Small models make mistakes, and that is part of what you are looking at. Questions are sent to the model provider to get an answer; do not type anything private.</p>
