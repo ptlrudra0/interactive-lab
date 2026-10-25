@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Make your own what-if experiment - Interactive Newsletter Lab</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>input[type=checkbox]{accent-color:#e4572e}:root{--ink:#14141a;--mute:#5d5f6a;--line:#e6e6ea;--acc:#e4572e;--clay:#f4f4f6}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#fff;color:var(--ink);font:17px/1.55 Figtree,-apple-system,Helvetica,Arial,sans-serif}
+main{max-width:680px;margin:0 auto;padding:22px 18px 70px}
+h1,h2{font-family:Fraunces,Georgia,serif;font-weight:600;letter-spacing:-.01em;line-height:1.12;margin:0}
+h1{font-size:34px;margin:6px 0 10px}h2{font-size:22px;margin:34px 0 8px}
+p{margin:8px 0}.mute{color:var(--mute)}.small{font-size:14px}
+.kick{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);font-weight:700}
+a{color:var(--ink)}
+.panel{background:var(--clay);border-radius:18px;padding:16px;margin:14px 0;box-shadow:inset 0 2px 5px rgba(20,20,26,.08),inset 0 -1px 0 #fff}
+.lbl{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:700;margin:0 0 8px}
+textarea,input[type=text],select{width:100%;font:inherit;padding:11px 12px;border:0;border-radius:12px;background:#fff;color:var(--ink);box-shadow:inset 0 2px 4px rgba(20,20,26,.12);-webkit-appearance:none}
+textarea{min-height:84px;resize:vertical}
+button{font:inherit;font-weight:600;padding:12px 16px;border-radius:14px;border:0;background:#fff;color:var(--ink);box-shadow:0 1px 0 #fff inset,0 2px 6px rgba(20,20,26,.14);margin:6px 8px 0 0;cursor:pointer}
+button.go{background:var(--ink);color:#fff}button.acc{background:var(--acc);color:#fff}
+button:disabled{opacity:.45;cursor:default}
+.chip{font-size:14px;font-weight:500;padding:7px 12px;border-radius:999px;margin:4px 6px 0 0}
+label.t{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}
+label.t:first-of-type{border-top:0}label.t input{margin-top:5px;width:18px;height:18px;flex:none}
+.tn{font-weight:700;font-size:15px}.td{font-size:14px;color:var(--mute)}
+.card{border-radius:18px;padding:16px;margin:14px 0;border:1px solid var(--line);background:#fff}
+.card.w{border-left:5px solid var(--ink)}.card.t{border-left:5px solid var(--acc)}
+.ans{white-space:pre-wrap;font-size:18px}.err{color:#b3261e}
+.tr{font:13px/1.45 Menlo,Consolas,monospace;background:var(--clay);border-radius:12px;padding:10px;margin-top:10px;white-space:pre-wrap;word-break:break-word;overflow-x:auto}
+details{margin-top:8px;font-size:14px}summary{cursor:pointer;color:var(--mute)}
+.bar{height:6px;border-radius:6px;background:#e8e8ec;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s linear}
+.row2{display:flex;gap:8px;flex-wrap:wrap}.row2>*{flex:1 1 140px}
+.fine{font-size:14px;color:var(--mute)}
+code{font:13px Menlo,Consolas,monospace;background:var(--clay);padding:1px 5px;border-radius:5px;word-break:break-all}
+.sl{padding:10px 0;border-top:1px solid var(--line)}.sl:first-of-type{border-top:0}
+.sl .top{display:flex;justify-content:space-between;gap:10px;font-weight:600;font-size:15px}.sl .v{color:var(--acc);white-space:nowrap}
+input[type=range]{width:100%;accent-color:#e4572e;margin:8px 0 0}
+.res{padding:12px 0;border-top:1px solid var(--line)}.res:first-of-type{border-top:0}
+.res .big{font:600 30px/1.1 Fraunces,Georgia,serif}.res .u{font:500 15px Figtree,sans-serif;color:var(--mute)}
+.res .nm{font-size:14px;color:var(--mute)}
+.warn{border-left:5px solid var(--acc);background:#fff;border-radius:14px;padding:12px 14px;font-size:14px;color:var(--mute);border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+</style></head><body><main>
+<p class="small"><a href="../">&larr; All experiments</a></p>
+<div class="kick">Experiment 2</div>
+<h1>Make your own what-if experiment</h1>
+<p class="mute">Type a topic or a story from the newsletter. A small AI model drafts a set of sliders and calculated results for it. Then you play with the sliders, and no AI is involved in that part. It only works for topics that can be turned into numbers you can change.</p>
+<div class="panel"><div class="lbl">Your topic</div>
+<input type="text" id="topic" maxlength="200" placeholder="e.g. how much a daily coffee habit costs over a year" autocomplete="off">
+<div><button class="chip" data-p="how much a daily coffee habit costs over a year">coffee habit</button><button class="chip" data-p="how screen brightness and screen time change phone battery life">phone battery</button><button class="chip" data-p="how saving a fixed amount monthly grows over the years">savings</button></div>
+<button class="acc" id="go">Make the experiment</button>
+<div id="stat" class="fine" role="status" aria-live="polite" style="margin-top:8px"></div><div class="bar" id="bar" hidden><i id="bari"></i></div></div>
+<div id="exp"></div>
+<h2>Read this first</h2>
+<p class="fine">The AI model is a free, no-account service run by Pollinations (<a href="https://pollinations.ai/terms">terms</a>, <a href="https://pollinations.ai/privacy">privacy</a>). Its documentation allows one free request at a time, at least 30 seconds apart per IP address, so there can be a wait. It is best effort and can fail or change. Your topic text is sent to it, so do not type anything private. It is for people 16 and older. Small models make mistakes: a generated experiment can have wrong formulas or made-up numbers, which is why every formula is shown. This is a learning toy, not advice.</p>
+<p class="fine">What the page does with the model's reply: it must be plain data in a fixed format (sliders, switches, up to 4 calculated results with arithmetic formulas). The page checks every field, rejects anything else, and rejects formulas that give an unusable number at the slider ends. No code from the model is run, and nothing is fetched from addresses it names. This is how this version works, not a rule of what is possible.</p>
+</main><script>
+var FUN={min:Math.min,max:Math.max,abs:Math.abs,round:Math.round,sqrt:Math.sqrt,floor:Math.floor,ceil:Math.ceil,pow:Math.pow};
+function parseF(src,known){
+  if(typeof src!=="string"||!src.trim()||src.length>120)throw new Error("formula missing or too long");
+  var t=[],re=/\s*(\d+\.?\d*|\.\d+|[A-Za-z_][A-Za-z0-9_]*|[-+*\/^(),])/y,i=0,m;
+  while(i<src.length){re.lastIndex=i;m=re.exec(src);if(!m){if(/^\s*$/.test(src.slice(i)))break;throw new Error("unsupported character in formula")}t.push(m[1]);i=re.lastIndex}
+  var p=0;
+  function peek(){return t[p]}
+  function expr(){var n=term();while(peek()==="+"||peek()==="-"){var o=t[p++];n={o:o,a:n,b:term()}}return n}
+  function term(){var n=unary();while(peek()==="*"||peek()==="/"){var o=t[p++];n={o:o,a:n,b:unary()}}return n}
+  function unary(){if(peek()==="-"){p++;return{o:"neg",a:unary()}}if(peek()==="+"){p++;return unary()}return pw()}
+  function pw(){var b=atom();if(peek()==="^"){p++;return{o:"^",a:b,b:unary()}}return b}
+  function atom(){var x=t[p++];if(x===undefined)throw new Error("formula ends early");
+    if(/^[\d.]/.test(x))return{o:"n",v:parseFloat(x)};
+    if(x==="("){var n=expr();if(t[p++]!==")")throw new Error("missing )");return n}
+    if(/^[A-Za-z_]/.test(x)){
+      if(peek()==="("){if(!FUN.hasOwnProperty(x))throw new Error("unknown function "+x);p++;var args=[];if(peek()!==")"){args.push(expr());while(peek()===","){p++;args.push(expr())}}if(t[p++]!==")")throw new Error("missing )");if(args.length<1||args.length>3)throw new Error("bad arguments");return{o:"f",f:x,args:args}}
+      if(x==="pi")return{o:"n",v:Math.PI};
+      if(known.indexOf(x)<0)throw new Error("unknown name "+x);return{o:"v",v:x}}
+    throw new Error("unexpected "+x)}
+  var ast=expr();if(p!==t.length)throw new Error("unexpected "+t[p]);return ast}
+function ev(n,env){switch(n.o){case"n":return n.v;case"v":return env[n.v];case"neg":return-ev(n.a,env);
+  case"+":return ev(n.a,env)+ev(n.b,env);case"-":return ev(n.a,env)-ev(n.b,env);case"*":return ev(n.a,env)*ev(n.b,env);case"/":return ev(n.a,env)/ev(n.b,env);
+  case"^":return Math.pow(ev(n.a,env),ev(n.b,env));case"f":return FUN[n.f].apply(null,n.args.map(function(a){return ev(a,env)}))}throw new Error("bad node")}
+function num(x){return typeof x==="number"&&isFinite(x)}
+function str(x,max){return typeof x==="string"&&x.trim().length>0&&x.length<=max}
+function validate(c){
+  if(!c||typeof c!=="object"||Array.isArray(c))throw new Error("not an object");
+  if(c.unsupported!==undefined){return{unsupported:String(c.unsupported).slice(0,200)}}
+  var ID=/^[a-z][a-z0-9_]{0,15}$/,ids=[],out={title:"",intro:"",takeaway:"",inputs:[],toggles:[],outputs:[]};
+  if(!str(c.title,80))throw new Error("title missing");out.title=c.title.trim();
+  if(!str(c.intro,260))throw new Error("intro missing or too long");out.intro=c.intro.trim();
+  if(c.takeaway!==undefined&&c.takeaway!==""){if(!str(c.takeaway,220))throw new Error("takeaway too long");out.takeaway=c.takeaway.trim()}
+  if(!Array.isArray(c.inputs)||c.inputs.length<1||c.inputs.length>6)throw new Error("need 1 to 6 sliders");
+  c.inputs.forEach(function(x){
+    if(!x||!ID.test(x.id)||ids.indexOf(x.id)>=0||x.id==="pi"||FUN.hasOwnProperty(x.id))throw new Error("bad slider id");
+    if(!str(x.label,50))throw new Error("slider label missing");
+    if(!num(x.min)||!num(x.max)||!num(x.step)||!num(x.value)||x.min>=x.max||x.step<=0||x.value<x.min||x.value>x.max||(x.max-x.min)/x.step>100000)throw new Error("slider "+x.id+" has bad numbers");
+    if(x.unit!==undefined&&x.unit!==""&&!str(x.unit,16))throw new Error("bad unit");
+    ids.push(x.id);out.inputs.push({id:x.id,label:x.label.trim(),min:x.min,max:x.max,step:x.step,value:x.value,unit:x.unit||""})});
+  var tg=c.toggles===undefined?[]:c.toggles;if(!Array.isArray(tg)||tg.length>3)throw new Error("at most 3 switches");
+  tg.forEach(function(x){if(!x||!ID.test(x.id)||ids.indexOf(x.id)>=0||x.id==="pi"||FUN.hasOwnProperty(x.id))throw new Error("bad switch id");if(!str(x.label,60))throw new Error("switch label missing");
+    ids.push(x.id);out.toggles.push({id:x.id,label:x.label.trim(),value:x.value?1:0})});
+  if(!Array.isArray(c.outputs)||c.outputs.length<1||c.outputs.length>4)throw new Error("need 1 to 4 results");
+  var known=ids.slice();
+  c.outputs.forEach(function(x){
+    if(!x||!ID.test(x.id)||known.indexOf(x.id)>=0||x.id==="pi"||FUN.hasOwnProperty(x.id))throw new Error("bad result id");
+    if(!str(x.label,60))throw new Error("result label missing");
+    var ast=parseF(x.formula,known);
+    var dec=x.decimals===undefined?1:x.decimals;if(!(dec===0||dec===1||dec===2||dec===3||dec===4))throw new Error("bad decimals");
+    var mx=x.max===undefined?0:x.max;if(!num(mx)||mx<0)throw new Error("bad max");
+    if(x.unit!==undefined&&x.unit!==""&&!str(x.unit,16))throw new Error("bad unit");
+    known.push(x.id);out.outputs.push({id:x.id,label:x.label.trim(),formula:x.formula.trim(),ast:ast,unit:x.unit||"",decimals:dec,max:mx})});
+  // sanity: every result must be finite at defaults and at the slider corners
+  var pts=[{},{lo:1},{hi:1}];
+  for(var k=0;k<pts.length;k++){var env={};
+    out.inputs.forEach(function(x){env[x.id]=pts[k].lo?x.min:pts[k].hi?x.max:x.value});out.toggles.forEach(function(x){env[x.id]=x.value});
+    out.outputs.forEach(function(o){var v=ev(o.ast,env);if(!num(v)||Math.abs(v)>1e15)throw new Error("result "+o.label+" is not a usable number at some settings");env[o.id]=v})}
+  return out}
+function compute(cfg,env){var e={};for(var k in env)e[k]=env[k];return cfg.outputs.map(function(o){var v=ev(o.ast,e);e[o.id]=v;return v})}
+
+var $=function(i){return document.getElementById(i)};
+var API="https://text.pollinations.ai/openai",GAP=31000,lastCall=0,busy=false;
+var SYS='You design small what-if calculators. Reply with ONE JSON object and nothing else, no markdown. Format: {"title":"...","intro":"one or two sentences","inputs":[{"id":"price","label":"Price per cup","min":1,"max":10,"step":0.5,"value":4,"unit":"$"}],"toggles":[{"id":"home","label":"Make it at home instead","value":0}],"outputs":[{"id":"year","label":"Cost per year","formula":"price*cups*365*(1-home*0.7)","unit":"$","decimals":0,"max":5000}],"takeaway":"one sentence on what to notice"}. Rules: 1 to 6 inputs, 0 to 3 toggles (value 0 or 1, used as 0 or 1 in formulas), 1 to 4 outputs. ids are lowercase letters, digits and underscores, start with a letter, max 16 characters. Formulas use only numbers, ids of inputs, toggles and EARLIER outputs, + - * / ^ ( ) and the functions min max abs round sqrt floor ceil pow. Every number you use must be a stated assumption a reader could change, so prefer sliders for assumptions. Each input value must lie between min and max. If the topic cannot be turned into numeric sliders (for example it needs live data, personal facts or is not quantitative), reply {"unsupported":"short reason"} instead.';
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function status(t,p){$("stat").textContent=t;if(p===undefined)$("bar").hidden=true;else{$("bar").hidden=false;$("bari").style.width=p+"%"}}
+async function slot(){var w=lastCall+GAP-Date.now();while(w>0){status("Waiting for the free model slot: "+Math.ceil(w/1000)+"s",Math.round((1-w/GAP)*100));await sleep(400);w=lastCall+GAP-Date.now()}}
+async function ask(topic){
+  await slot();status("Asking the model to draft your experiment...",100);lastCall=Date.now();
+  var body={model:"openai",messages:[{role:"system",content:SYS},{role:"user",content:"Topic: "+topic}],max_tokens:1200,seed:Math.floor(Math.random()*1e9)};
+  var r;try{r=await fetch(API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)})}catch(e){throw new Error("Could not reach the model service.")}
+  if(r.status===402||r.status===429)throw new Error("The free slot is not ready yet (the service said to wait). Nothing was charged. Try again in about 30 seconds.");
+  if(!r.ok)throw new Error("The model service returned an error ("+r.status+").");
+  var j;try{j=await r.json()}catch(e){throw new Error("Unexpected reply from the model service.")}
+  var m=j.choices&&j.choices[0]&&j.choices[0].message;if(!m||typeof m.content!=="string"||!m.content.trim())throw new Error("The model service returned no answer.");
+  return m.content}
+function parseReply(t){var a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<a)throw new Error("The model did not return the expected data format.");try{return JSON.parse(t.slice(a,b+1))}catch(e){throw new Error("The model did not return the expected data format.")}}
+function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
+function fmt(v,d){return v.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d})}
+function render(cfg,topic){
+  var root=$("exp");root.textContent="";
+  var w=el("div","warn","Drafted by a small AI model from your topic. It can be wrong: open How this is calculated and check the formulas and assumptions. The sliders below run in your browser with no model.");
+  root.appendChild(w);
+  var card=el("div","card t");card.appendChild(el("div","lbl","Generated experiment: "+topic.slice(0,80)));card.appendChild(el("h2",null,cfg.title));card.lastChild.style.margin="4px 0 6px";card.appendChild(el("p","mute",cfg.intro));root.appendChild(card);
+  var pan=el("div","panel");pan.appendChild(el("div","lbl","Change these"));
+  var env={},vals={};
+  var res=el("div","panel");res.appendChild(el("div","lbl","What you get"));
+  var rows=cfg.outputs.map(function(o){var r=el("div","res");var nm=el("div","nm",o.label);var big=el("div","big");var u=el("span","u");big.appendChild(document.createTextNode(""));var bar=el("div","bar");var bi=el("i");bar.appendChild(bi);r.appendChild(nm);r.appendChild(big);if(o.max>0)r.appendChild(bar);res.appendChild(r);return{big:big,u:u,bi:bi,o:o}});
+  function update(){var out=compute(cfg,env);rows.forEach(function(r,i){var v=out[i];r.big.textContent=fmt(v,r.o.decimals)+(r.o.unit?" "+r.o.unit:"");if(r.bi)r.bi.style.width=Math.max(0,Math.min(100,v/r.o.max*100))+"%"});
+    cfg.inputs.forEach(function(x){vals[x.id].textContent=fmt(env[x.id],Math.min(4,(String(x.step).split(".")[1]||"").length))+(x.unit?" "+x.unit:"")})}
+  cfg.inputs.forEach(function(x){env[x.id]=x.value;var s=el("div","sl");var top=el("div","top");top.appendChild(el("span",null,x.label));var v=el("span","v");vals[x.id]=v;top.appendChild(v);s.appendChild(top);
+    var r=el("input");r.type="range";r.min=x.min;r.max=x.max;r.step=x.step;r.value=x.value;r.setAttribute("aria-label",x.label);r.oninput=function(){env[x.id]=parseFloat(r.value);update()};s.appendChild(r);pan.appendChild(s)});
+  cfg.toggles.forEach(function(x){env[x.id]=x.value;var l=el("label","t");var c=el("input");c.type="checkbox";c.checked=!!x.value;c.onchange=function(){env[x.id]=c.checked?1:0;update()};l.appendChild(c);l.appendChild(el("span",null,x.label));pan.appendChild(l)});
+  root.appendChild(pan);root.appendChild(res);
+  if(cfg.takeaway){var t=el("p","mute");t.appendChild(el("b",null,"Notice: "));t.appendChild(document.createTextNode(cfg.takeaway));root.appendChild(t)}
+  var d=el("details");d.appendChild(el("summary",null,"How this is calculated"));var pre=el("div","tr");pre.textContent=cfg.outputs.map(function(o){return o.id+" = "+o.formula+"   ("+o.label+")"}).join("\n")+"\n\nNames: "+cfg.inputs.concat(cfg.toggles).map(function(x){return x.id+" = "+x.label}).join("; ");d.appendChild(pre);root.appendChild(d);
+  update()}
+function fail(msg){status("",undefined);$("exp").textContent="";var c=el("div","card");c.appendChild(el("div","lbl","Could not make this one"));c.appendChild(el("p","err",msg));$("exp").appendChild(c)}
+async function make(){
+  var topic=$("topic").value.trim().slice(0,200);if(!topic||busy)return;busy=true;$("go").disabled=true;$("exp").textContent="";
+  try{
+    var txt=await ask(topic),cfg;
+    try{cfg=validate(parseReply(txt))}catch(e){throw new Error("The model's draft did not pass the page's checks ("+e.message+"), so nothing was built. Try rewording the topic so it is about numbers you can change.")}
+    if(cfg.unsupported){throw new Error("This topic does not turn into a what-if with sliders. The model said: "+cfg.unsupported)}
+    status("",undefined);render(cfg,topic)
+  }catch(e){fail(e.message)}
+  busy=false;$("go").disabled=false}
+$("go").onclick=make;$("topic").onkeydown=function(e){if(e.key==="Enter")make()};
+var ch=document.querySelectorAll(".chip[data-p]");for(var i=0;i<ch.length;i++)ch[i].onclick=function(){$("topic").value=this.getAttribute("data-p")};
+</script></body></html>
